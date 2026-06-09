@@ -182,6 +182,89 @@ function obtenerNombresCategoriasSuscriptor(PDO $pdo, int $suscriptorId): array
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function obtenerSuscriptorPorId(
+    PDO $pdo,
+    int $id
+): ?array {
+
+    $stmt = $pdo->prepare("
+        SELECT *
+        FROM suscriptores
+        WHERE id = ?
+        LIMIT 1
+    ");
+
+    $stmt->execute([$id]);
+
+    $suscriptor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    return $suscriptor ?: null;
+}
+
+function obtenerSuscriptorCompleto(
+    PDO $pdo,
+    int $id
+): ?array {
+
+    $suscriptor = obtenerSuscriptorPorId(
+        $pdo,
+        $id
+    );
+
+    if (!$suscriptor) {
+        return null;
+    }
+
+    $suscriptor['categorias'] =
+        obtenerCategoriasSuscriptor(
+            $pdo,
+            $id
+        );
+
+    return $suscriptor;
+}
+
+function guardarSuscriptor(
+    PDO $pdo,
+    array $datos
+): int {
+
+    $categorias = $datos['categorias'] ?? [];
+
+    if (!empty($datos['id'])) {
+
+        actualizarSuscriptor(
+            $pdo,
+            (int)$datos['id'],
+            trim($datos['nombre']),
+            trim($datos['email']),
+            $datos['estado']
+        );
+
+        actualizarCategoriasSuscriptor(
+            $pdo,
+            (int)$datos['id'],
+            $categorias
+        );
+
+        return (int)$datos['id'];
+    }
+
+    $suscriptorId = registrarSuscriptor(
+        $pdo,
+        trim($datos['nombre']),
+        trim($datos['email'])
+    );
+
+    actualizarCategoriasSuscriptor(
+        $pdo,
+        $suscriptorId,
+        $categorias
+    );
+
+    return $suscriptorId;
+}
+
 
 /*
 

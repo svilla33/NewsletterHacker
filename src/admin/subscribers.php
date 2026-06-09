@@ -9,7 +9,9 @@ require_once '../includes/sql.php';
 | ELIMINAR
 |--------------------------------------------------------------------------
 */
+
 if (isset($_GET['delete'])) {
+
     eliminarSuscriptor(
         $pdo,
         (int)$_GET['delete']
@@ -24,37 +26,28 @@ if (isset($_GET['delete'])) {
 | DATOS
 |--------------------------------------------------------------------------
 */
+
 $categorias = obtenerCategorias($pdo);
 
-$editando = false;
-$suscriptor = null;
-$categoriasSeleccionadas = [];
+
 
 /*
 |--------------------------------------------------------------------------
 | EDITAR
 |--------------------------------------------------------------------------
 */
+
+$editando = false;
+$suscriptor = null;
+
 if (isset($_GET['edit'])) {
-    $stmt = $pdo->prepare("
-        SELECT *
-        FROM suscriptores
-        WHERE id = ?
-    ");
 
-    $stmt->execute([
+    $suscriptor = obtenerSuscriptorCompleto(
+        $pdo,
         (int)$_GET['edit']
-    ]);
+    );
 
-    $suscriptor = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($suscriptor) {
-        $editando = true;
-        $categoriasSeleccionadas = obtenerCategoriasSuscriptor(
-            $pdo,
-            $suscriptor['id']
-        );
-    }
+    $editando = $suscriptor !== null;
 }
 
 /*
@@ -62,34 +55,13 @@ if (isset($_GET['edit'])) {
 | GUARDAR
 |--------------------------------------------------------------------------
 */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!empty($_POST['id'])) {
-        actualizarSuscriptor(
-            $pdo,
-            (int)$_POST['id'],
-            trim($_POST['nombre']),
-            trim($_POST['email']),
-            $_POST['estado']
-        );
 
-        actualizarCategoriasSuscriptor(
-            $pdo,
-            (int)$_POST['id'],
-            $_POST['categorias'] ?? []
-        );
-    } else {
-        $suscriptorId = registrarSuscriptor(
-            $pdo,
-            trim($_POST['nombre']),
-            trim($_POST['email'])
-        );
-
-        actualizarCategoriasSuscriptor(
-            $pdo,
-            $suscriptorId,
-            $_POST['categorias'] ?? []
-        );
-    }
+    guardarSuscriptor(
+        $pdo,
+        $_POST
+    );
 
     header('Location: subscribers.php');
     exit;
@@ -100,11 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 | LISTADO
 |--------------------------------------------------------------------------
 */
+
 $suscriptores = obtenerSuscriptores($pdo);
 
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -115,6 +89,7 @@ $suscriptores = obtenerSuscriptores($pdo);
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
+
 <body>
 
     <div class="terminal-window">
@@ -167,26 +142,36 @@ $suscriptores = obtenerSuscriptores($pdo);
 
                     <p>Nombre</p>
                     <input type="text" name="nombre" class="terminal-input"
-                           value="<?= htmlspecialchars($suscriptor['nombre'] ?? '') ?>">
+                        value="<?= htmlspecialchars($suscriptor['nombre'] ?? '') ?>">
 
                     <p>Email</p>
                     <input type="email" name="email" required class="terminal-input"
-                           value="<?= htmlspecialchars($suscriptor['email'] ?? '') ?>">
+                        value="<?= htmlspecialchars($suscriptor['email'] ?? '') ?>">
 
                     <p>Estado</p>
                     <select name="estado" class="terminal-select">
-                        <option value="activo" <?= (($suscriptor['estado'] ?? '') === 'activo') ? 'selected' : '' ?>>Activo</option>
+                        <option value="activo"
+                            <?= (($suscriptor['estado'] ?? 'activo') === 'activo') ? 'selected' : '' ?>>
+                            Activo
+                        </option>
                         <option value="inactivo" <?= (($suscriptor['estado'] ?? '') === 'inactivo') ? 'selected' : '' ?>>Inactivo</option>
                         <option value="baja" <?= (($suscriptor['estado'] ?? '') === 'baja') ? 'selected' : '' ?>>Baja</option>
                     </select>
 
                     <p>Categorías de interés</p>
                     <div class="tags-container">
-                        <?php foreach($categorias as $cat): ?>
+                        <?php foreach ($categorias as $cat): ?>
                             <label class="terminal-checkbox-label">
-                                <input type="checkbox" name="categorias[]" class="terminal-checkbox"
-                                       value="<?= $cat['id'] ?>"
-                                       <?= in_array($cat['id'], $categoriasSeleccionadas) ? 'checked' : '' ?>>
+                                <input
+                                    type="checkbox"
+                                    name="categorias[]"
+                                    class="terminal-checkbox"
+                                    value="<?= $cat['id'] ?>"
+                                    <?= in_array(
+                                        $cat['id'],
+                                        $suscriptor['categorias'] ?? []
+                                    ) ? 'checked' : '' ?>>
+
                                 <?= htmlspecialchars($cat['nombre']) ?>
                             </label>
                         <?php endforeach; ?>
@@ -201,7 +186,7 @@ $suscriptores = obtenerSuscriptores($pdo);
 
             <hr>
             <h2><i class="fas fa-users-viewfinder"></i> Suscriptores Registrados</h2>
-            
+
             <table>
                 <tr>
                     <th>ID</th>
@@ -212,22 +197,22 @@ $suscriptores = obtenerSuscriptores($pdo);
                     <th>Categorías</th>
                     <th>Acciones</th>
                 </tr>
-                <?php foreach($suscriptores as $s): ?>
-                <tr>
-                    <td><?= $s['id'] ?></td>
-                    <td><?= htmlspecialchars($s['nombre'] ?? '-') ?></td>
-                    <td><?= htmlspecialchars($s['email']) ?></td>
-                    <td><?= htmlspecialchars($s['estado']) ?></td>
-                    <td><?= date('d/m/Y H:i', strtotime($s['fecha_suscripcion'])) ?></td>
-                    <td>
-                        <?php $cats = obtenerNombresCategoriasSuscriptor($pdo, $s['id']); ?>
-                        <?= empty($cats) ? '-' : htmlspecialchars(implode(', ', $cats)) ?>
-                    </td>
-                    <td>
-                        <a href="?edit=<?= $s['id'] ?>"><i class="fas fa-user-edit"></i> Editar</a> |
-                        <a href="?delete=<?= $s['id'] ?>" onclick="return confirm('¿Eliminar suscriptor?')"><i class="fas fa-user-minus"></i> Eliminar</a>
-                    </td>
-                </tr>
+                <?php foreach ($suscriptores as $s): ?>
+                    <tr>
+                        <td><?= $s['id'] ?></td>
+                        <td><?= htmlspecialchars($s['nombre'] ?? '-') ?></td>
+                        <td><?= htmlspecialchars($s['email']) ?></td>
+                        <td><?= htmlspecialchars($s['estado']) ?></td>
+                        <td><?= date('d/m/Y H:i', strtotime($s['fecha_suscripcion'])) ?></td>
+                        <td>
+                            <?php $cats = obtenerNombresCategoriasSuscriptor($pdo, $s['id']); ?>
+                            <?= empty($cats) ? '-' : htmlspecialchars(implode(', ', $cats)) ?>
+                        </td>
+                        <td>
+                            <a href="?edit=<?= $s['id'] ?>"><i class="fas fa-user-edit"></i> Editar</a> |
+                            <a href="?delete=<?= $s['id'] ?>" onclick="return confirm('¿Eliminar suscriptor?')"><i class="fas fa-user-minus"></i> Eliminar</a>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
             </table>
 
@@ -240,4 +225,5 @@ $suscriptores = obtenerSuscriptores($pdo);
     </div>
 
 </body>
+
 </html>
