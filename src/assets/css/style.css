@@ -1,0 +1,557 @@
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
+
+       body {
+           background: radial-gradient(circle at 20% 30%, #0a0c0f, #020304);
+           font-family: 'Inter', 'JetBrains Mono', monospace, sans-serif;
+           color: #ccdfe6;
+           line-height: 1.5;
+           min-height: 100vh;
+           padding: 2rem 1.5rem;
+           position: relative;
+       }
+
+       /* subtle noise texture (hacker grit) */
+       body::before {
+           content: "";
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+           pointer-events: none;
+           z-index: 0;
+       }
+
+       /* main terminal window container */
+       .terminal-window {
+           max-width: 1300px;
+           margin: 0 auto;
+           background: #0b0e12e6;
+           backdrop-filter: blur(1px);
+           border: 1px solid #1d3a2c;
+           box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 255, 0, 0.1), 0 0 18px rgba(0, 255, 0, 0.15);
+           overflow: hidden;
+           transition: all 0.2s ease;
+           position: relative;
+           z-index: 2;
+       }
+
+       /* terminal top bar (mac style but hacker twist) */
+       .term-bar {
+           background: #0e1117;
+           padding: 0.8rem 1.5rem;
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           border-bottom: 1px solid #1e3a2a;
+           flex-wrap: wrap;
+           gap: 10px;
+       }
+
+       .term-buttons {
+           display: flex;
+           gap: 10px;
+       }
+
+       .term-btn {
+           width: 14px;
+           height: 14px;
+           border-radius: 50%;
+           transition: 0.1s;
+       }
+
+       .red {
+           background: #ff5f56;
+           box-shadow: 0 0 2px #ff5f56;
+       }
+
+       .yellow {
+           background: #ffbd2e;
+           box-shadow: 0 0 2px #ffbd2e;
+       }
+
+       .green {
+           background: #27c93f;
+           box-shadow: 0 0 2px #27c93f;
+       }
+
+       .term-title {
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.85rem;
+           letter-spacing: 0.5px;
+           background: #1a1e26;
+           padding: 0.2rem 0.8rem;
+           border-radius: 4px;
+           color: #a0f0b0;
+           border: 1px solid #2a4635;
+       }
+
+       .term-title i {
+           margin-right: 6px;
+           font-size: 0.75rem;
+       }
+
+       .term-status {
+           font-size: 0.7rem;
+           color: #6fcf97;
+           background: #0e1a12;
+           padding: 0.2rem 0.7rem;
+           border-radius: 4px;
+           font-family: monospace;
+       }
+
+       /* inner content */
+       .term-content {
+           padding: 2rem 2rem 2.5rem;
+       }
+
+       /* glitch heading */
+       .glitch-wrapper {
+           margin-bottom: 1rem;
+       }
+
+       .glitch {
+           font-size: clamp(2.2rem, 8vw, 4.2rem);
+           font-weight: 800;
+           font-family: 'JetBrains Mono', monospace;
+           text-transform: uppercase;
+           color: #bbffcc;
+           position: relative;
+           text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.4), -0.05em -0.025em 0 rgba(0, 255, 0, 0.3);
+           animation: glitch-shake 0.3s infinite alternate;
+           letter-spacing: -1px;
+       }
+
+       @keyframes glitch-shake {
+           0% {
+               transform: translate(0);
+               text-shadow: 0.03em 0 0 #ff00c1, -0.03em -0.02em 0 #00ff9d;
+           }
+
+           100% {
+               transform: translate(-0.02em, 0.01em);
+               text-shadow: -0.03em 0 0 #00ff9d, 0.03em 0.02em 0 #ff00c1;
+           }
+       }
+
+       .tagline {
+           font-family: 'Inter', monospace;
+           font-size: 1.1rem;
+           border-left: 4px solid #2eff7a;
+           padding-left: 1rem;
+           margin: 0.8rem 0 1.8rem 0;
+           color: #c8f0e0;
+           font-weight: 400;
+           background: linear-gradient(90deg, #0f1f18, transparent);
+       }
+
+       /* command-line form */
+       .hacker-card {
+           background: #030609b3;
+           border-radius: 6px;
+           border: 1px solid #2d5a3e;
+           padding: 1.8rem;
+           margin: 2rem 0 2rem 0;
+           backdrop-filter: blur(4px);
+           box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+       }
+
+       .prompt-line {
+           display: flex;
+           flex-wrap: wrap;
+           align-items: baseline;
+           gap: 0.5rem;
+           margin-bottom: 1rem;
+           font-family: 'JetBrains Mono', monospace;
+       }
+
+       .dollar {
+           color: #57ff9e;
+           font-weight: bold;
+           font-size: 1.4rem;
+       }
+
+       .cmd-text {
+           color: #9effcf;
+           font-size: 1rem;
+       }
+
+       .input-group {
+           display: flex;
+           flex-wrap: wrap;
+           gap: 12px;
+           margin-top: 1rem;
+           align-items: center;
+       }
+
+       .terminal-input {
+           flex: 3;
+           background: #010101cc;
+           border: 1px solid #3c7457;
+           padding: 0.9rem 1.2rem;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 1rem;
+           color: #b0ffcc;
+           border-radius: 0;
+           outline: none;
+           transition: all 0.2s;
+           letter-spacing: 0.3px;
+       }
+
+       .terminal-input:focus {
+           border-color: #6effa3;
+           box-shadow: 0 0 10px #2eff7a66;
+           background: #05100b;
+       }
+
+       .terminal-btn {
+           background: #1f3e2c;
+           border: 1px solid #5fe382;
+           color: #e0ffea;
+           padding: 0.9rem 1.8rem;
+           font-family: 'JetBrains Mono', monospace;
+           font-weight: bold;
+           border-radius: 0;
+           cursor: pointer;
+           transition: all 0.2s ease;
+           display: inline-flex;
+           align-items: center;
+           gap: 8px;
+           font-size: 0.95rem;
+           text-decoration: none;
+       }
+
+       .terminal-btn:hover {
+           background: #2f5e42;
+           border-color: #9effb4;
+           box-shadow: 0 0 12px #5eff84;
+           transform: scale(0.97);
+       }
+
+       /* live terminal log */
+       .log-console {
+           background: #03080a;
+           border-radius: 6px;
+           padding: 1rem;
+           margin-top: 1.5rem;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.8rem;
+           border-left: 4px solid #3eff7e;
+           max-height: 140px;
+           overflow-y: auto;
+       }
+
+       .log-line {
+           color: #7bc28b;
+           border-bottom: 0.5px solid #1f402f;
+           padding: 0.3rem 0;
+           font-size: 0.75rem;
+       }
+
+       .log-line i {
+           width: 20px;
+           color: #63ff9e;
+       }
+
+       /* features grid */
+       .features {
+           display: grid;
+           grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+           gap: 1.5rem;
+           margin: 2rem 0 2rem;
+       }
+
+       .feature-item {
+           background: #0b1215c9;
+           border-radius: 6px;
+           padding: 1.2rem;
+           border: 1px solid #2a593f;
+           transition: 0.2s;
+           backdrop-filter: blur(2px);
+       }
+
+       .feature-item i {
+           font-size: 1.8rem;
+           color: #3eff93;
+           margin-bottom: 0.8rem;
+       }
+
+       .feature-item h3 {
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 1.2rem;
+           margin-bottom: 0.5rem;
+           letter-spacing: -0.3px;
+       }
+
+       .feature-item p {
+           font-size: 0.85rem;
+           opacity: 0.85;
+       }
+
+       /* sample issue */
+       .sample-issue {
+           background: #07100cee;
+           border-radius: 6px;
+           padding: 1.5rem;
+           margin: 1.5rem 0;
+           border: 1px dashed #4caf7a;
+       }
+
+       .sample-issue pre {
+           font-family: 'JetBrains Mono', monospace;
+           background: #00000080;
+           padding: 0.8rem;
+           border-radius: 4px;
+           overflow-x: auto;
+           font-size: 0.8rem;
+           color: #beffcf;
+       }
+
+       /* testimonial */
+       .testi {
+           display: flex;
+           gap: 1.5rem;
+           flex-wrap: wrap;
+           margin: 1.2rem 0;
+           justify-content: center;
+       }
+
+       .testi-card {
+           background: #0e171f;
+           border-radius: 6px;
+           padding: 1rem 1.5rem;
+           border-left: 5px solid #6aff96;
+           flex: 1;
+           min-width: 200px;
+       }
+
+       /* footer */
+       .footer {
+           margin-top: 3rem;
+           text-align: center;
+           font-size: 0.7rem;
+           border-top: 1px solid #2b5a42;
+           padding-top: 1.5rem;
+           color: #799f89;
+           display: flex;
+           justify-content: space-between;
+           flex-wrap: wrap;
+           gap: 0.8rem;
+       }
+
+       /* admin nav estilo terminal */
+       .admin-nav {
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.75rem;
+           color: #8fbc8f;
+           background: #0e1a12;
+           padding: 0.6rem 1rem;
+           border-radius: 4px;
+           display: flex;
+           flex-wrap: wrap;
+           gap: 1rem;
+           align-items: center;
+           margin-bottom: 1.5rem;
+           border: 1px solid #2a4635;
+       }
+
+       .admin-nav a {
+           color: #aaffcc;
+           text-decoration: none;
+           transition: 0.2s;
+           display: flex;
+           align-items: center;
+           gap: 4px;
+       }
+
+       .admin-nav a:hover {
+           color: #60ffa0;
+           text-decoration: underline;
+       }
+
+       .admin-nav span.sep {
+           color: #3a5a4a;
+       }
+
+       /* tablas terminal */
+       table {
+           width: 100%;
+           border-collapse: collapse;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.8rem;
+           background: #03080a;
+           border: 1px solid #2a4635;
+           margin: 1rem 0;
+       }
+
+       th {
+           background: #0e171f;
+           color: #bbffcc;
+           text-align: left;
+           padding: 0.7rem;
+           border-bottom: 1px solid #4caf7a;
+       }
+
+       td {
+           padding: 0.5rem 0.7rem;
+           border-bottom: 1px solid #1e3a2a;
+           color: #b0d9c1;
+       }
+
+       tr:hover td {
+           background: #0a1a14;
+       }
+
+       /* responsive */
+       @media (max-width: 680px) {
+           .term-content {
+               padding: 1.5rem;
+           }
+
+           .input-group {
+               flex-direction: column;
+               align-items: stretch;
+           }
+
+           .terminal-btn {
+               justify-content: center;
+           }
+       }
+
+       a {
+           color: #aaffcc;
+           text-decoration: none;
+       }
+
+       a:hover {
+           text-decoration: underline;
+           color: #60ffa0;
+       }
+
+       ::selection {
+           background: #1e7145;
+           color: black;
+       }
+
+       hr {
+           border: none;
+           border-top: 1px solid #2b5a42;
+           margin: 1.5rem 0;
+       }
+
+       /* Asegurar que select, textarea y checkbox sigan el look terminal */
+       .terminal-textarea,
+       select.terminal-select {
+           background: #010101cc;
+           border: 1px solid #3c7457;
+           padding: 0.9rem 1.2rem;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 1rem;
+           color: #b0ffcc;
+           outline: none;
+           transition: all 0.2s;
+           letter-spacing: 0.3px;
+           border-radius: 0;
+           width: 100%;
+           margin: 0.5rem 0 1rem;
+       }
+
+       .terminal-textarea:focus,
+       .terminal-select:focus {
+           border-color: #6effa3;
+           box-shadow: 0 0 10px #2eff7a66;
+           background: #05100b;
+       }
+
+       .terminal-checkbox {
+           accent-color: #2eff7a;
+       }
+
+       /* Ajustes para la tabla (si style.css no las contempla) */
+       table {
+           width: 100%;
+           border-collapse: collapse;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.8rem;
+           background: #03080a;
+           border: 1px solid #2a4635;
+           margin: 1rem 0;
+       }
+
+       th {
+           background: #0e171f;
+           color: #bbffcc;
+           text-align: left;
+           padding: 0.7rem;
+           border-bottom: 1px solid #4caf7a;
+       }
+
+       td {
+           padding: 0.5rem 0.7rem;
+           border-bottom: 1px solid #1e3a2a;
+           color: #b0d9c1;
+       }
+
+       tr:hover td {
+           background: #0a1a14;
+       }
+
+       .hacker-card form>p {
+           color: #9effcf;
+           margin-top: 1rem;
+           margin-bottom: 0.5rem;
+           /* Un pequeño espacio antes del input */
+       }
+
+       /* Contenedor del listado de checkboxes */
+       .tags-container {
+           margin-bottom: 15px;
+       }
+
+       /* Etiquetas individuales de cada checkbox */
+       .terminal-checkbox-label {
+           display: block;
+           color: #b0ffcc;
+           font-family: 'JetBrains Mono', monospace;
+           font-size: 0.85rem;
+           margin-bottom: 5px;
+           /* Separación vertical entre opciones */
+           cursor: pointer;
+       }
+
+       /* Ajuste opcional para alinear el checkbox con el texto */
+       .terminal-checkbox {
+           margin-right: 6px;
+           vertical-align: middle;
+       }
+
+       /* Espaciado del título "Categorías de interés" dentro del formulario */
+       .form-section-title {
+           display: inline-block;
+           margin-top: 1.5rem;
+           color: #9effcf;
+       }
+
+       /* Margen superior en los logs de éxito o error por parámetros GET */
+       .log-success,
+       .log-error {
+           margin-top: 15px;
+       }
+
+       /* Manejo del espaciado del archivo de newsletters (reemplaza los <br> y <hr> antiguos) */
+       .archive-item {
+           margin-bottom: 2rem;
+           padding-bottom: 1.5rem;
+           border-bottom: 1px dashed #333;
+           /* Una línea divisoria al estilo terminal */
+       }
+
+       .archive-item:last-child {
+           border-bottom: none;
+           /* Quita la línea al último elemento del archivo */
+       }

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>0xSEC · Hacker Newsletter | Terminal Edition</title>
+  <!-- Font Awesome 6 (free icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- Google Fonts: monospace + sans for readability -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 30%, #0a0c0f, #020304);
+      font-family: 'Inter', 'JetBrains Mono', monospace, sans-serif;
+      color: #ccdfe6;
+      line-height: 1.5;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      position: relative;
+    }
+
+    /* subtle noise texture (hacker grit) */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* main terminal window container */
+    .terminal-window {
+      max-width: 1300px;
+      margin: 0 auto;
+      background: #0b0e12e6;
+      backdrop-filter: blur(1px);
+   
+      border: 1px solid #1d3a2c;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 255, 0, 0.1), 0 0 18px rgba(0, 255, 0, 0.15);
+      overflow: hidden;
+      transition: all 0.2s ease;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* terminal top bar (mac style but hacker twist) */
+    .term-bar {
+      background: #0e1117;
+      padding: 0.8rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e3a2a;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .term-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .term-btn {
+      width: 14px;
+      height: 14px;
+     
+      transition: 0.1s;
+    }
+    .red { background: #ff5f56; box-shadow: 0 0 2px #ff5f56; }
+    .yellow { background: #ffbd2e; box-shadow: 0 0 2px #ffbd2e; }
+    .green { background: #27c93f; box-shadow: 0 0 2px #27c93f; }
+    .term-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      background: #1a1e26;
+      padding: 0.2rem 0.8rem;
+    
+      color: #a0f0b0;
+      border: 1px solid #2a4635;
+    }
+    .term-title i {
+      margin-right: 6px;
+      font-size: 0.75rem;
+    }
+    .term-status {
+      font-size: 0.7rem;
+      color: #6fcf97;
+      background: #0e1a12;
+      padding: 0.2rem 0.7rem;
+   
+      font-family: monospace;
+    }
+
+    /* inner content */
+    .term-content {
+      padding: 2rem 2rem 2.5rem;
+    }
+
+    /* glitch heading */
+    .glitch-wrapper {
+      margin-bottom: 1rem;
+    }
+    .glitch {
+      font-size: clamp(2.2rem, 8vw, 4.2rem);
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      color: #bbffcc;
+      position: relative;
+      text-shadow: 0.05em 0 0 rgba(255, 0, 0, 0.4), -0.05em -0.025em 0 rgba(0, 255, 0, 0.3);
+      animation: glitch-shake 0.3s infinite alternate;
+      letter-spacing: -1px;
+    }
+    @keyframes glitch-shake {
+      0% { transform: translate(0); text-shadow: 0.03em 0 0 #ff00c1, -0.03em -0.02em 0 #00ff9d; }
+      100% { transform: translate(-0.02em, 0.01em); text-shadow: -0.03em 0 0 #00ff9d, 0.03em 0.02em 0 #ff00c1; }
+    }
+    .tagline {
+      font-family: 'Inter', monospace;
+      font-size: 1.1rem;
+      border-left: 4px solid #2eff7a;
+      padding-left: 1rem;
+      margin: 0.8rem 0 1.8rem 0;
+      color: #c8f0e0;
+      font-weight: 400;
+      background: linear-gradient(90deg, #0f1f18, transparent);
+    }
+
+    /* command-line form */
+    .hacker-card {
+      background: #030609b3;
+  
+      border: 1px solid #2d5a3e;
+      padding: 1.8rem;
+      margin: 2rem 0 2rem 0;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    }
+    .prompt-line {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .dollar {
+      color: #57ff9e;
+      font-weight: bold;
+      font-size: 1.4rem;
+    }
+    .cmd-text {
+      color: #9effcf;
+      font-size: 1rem;
+    }
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 1rem;
+      align-items: center;
+    }
+    .terminal-input {
+      flex: 3;
+      background: #010101cc;
+      border: 1px solid #3c7457;
+      padding: 0.9rem 1.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      color: #b0ffcc;
+   
+      outline: none;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .terminal-input:focus {
+      border-color: #6effa3;
+      box-shadow: 0 0 10px #2eff7a66;
+      background: #05100b;
+    }
+    .terminal-btn {
+      background: #1f3e2c;
+      border: 1px solid #5fe382;
+      color: #e0ffea;
+      padding: 0.9rem 1.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: bold;
+     
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.95rem;
+    }
+    .terminal-btn:hover {
+      background: #2f5e42;
+      border-color: #9effb4;
+      box-shadow: 0 0 12px #5eff84;
+      transform: scale(0.97);
+    }
+
+    /* live terminal log */
+    .log-console {
+      background: #03080a;
+     
+      padding: 1rem;
+      margin-top: 1.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      border-left: 4px solid #3eff7e;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+    .log-line {
+      color: #7bc28b;
+      border-bottom: 0.5px solid #1f402f;
+      padding: 0.3rem 0;
+      font-size: 0.75rem;
+    }
+    .log-line i {
+      width: 20px;
+      color: #63ff9e;
+    }
+
+    /* features grid */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0 2rem;
+    }
+    .feature-item {
+      background: #0b1215c9;
+      
+      padding: 1.2rem;
+      border: 1px solid #2a593f;
+      transition: 0.2s;
+      backdrop-filter: blur(2px);
+    }
+    .feature-item i {
+      font-size: 1.8rem;
+      color: #3eff93;
+      margin-bottom: 0.8rem;
+    }
+    .feature-item h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.3px;
+    }
+    .feature-item p {
+      font-size: 0.85rem;
+      opacity: 0.85;
+    }
+
+    /* sample issue */
+    .sample-issue {
+      background: #07100cee;
+      
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      border: 1px dashed #4caf7a;
+    }
+    .sample-issue pre {
+      font-family: 'JetBrains Mono', monospace;
+      background: #00000080;
+      padding: 0.8rem;
+      
+      overflow-x: auto;
+      font-size: 0.8rem;
+      color: #beffcf;
+    }
+
+    /* testimonial */
+    .testi {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin: 1.2rem 0;
+      justify-content: center;
+    }
+    .testi-card {
+      background: #0e171f;
+  
+      padding: 1rem 1.5rem;
+      border-left: 5px solid #6aff96;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* footer */
+    .footer {
+      margin-top: 3rem;
+      text-align: center;
+      font-size: 0.7rem;
+      border-top: 1px solid #2b5a42;
+      padding-top: 1.5rem;
+      color: #799f89;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    /* responsive */
+    @media (max-width: 680px) {
+      .term-content {
+        padding: 1.5rem;
+      }
+      .input-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .terminal-btn {
+        justify-content: center;
+      }
+    }
+
+    a {
+      color: #aaffcc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+      color: #60ffa0;
+    }
+    ::selection {
+      background: #1e7145;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+<div class="terminal-window">
+
+  <div class="term-content">
+
+
+<!-- HERO -->
+<div class="glitch-wrapper">
+  <h1 class="glitch">>_ CYBERSECURITY NEWSLETTER</h1>
+</div>
+
+<p class="hero-description">
+  Mantente al día con vulnerabilidades, investigaciones, herramientas y tendencias
+  del mundo de la seguridad informática.
+</p>
+
+<div class="hacker-card">
+
+
+
+  <div class="prompt-line">
+    <span class="dollar">⤷</span>
+    <span class="cmd-text">Ingresa tu correo para recibir la próxima edición</span>
+  </div>
+
+  <div class="input-group">
+    <input
+      type="email"
+      id="hackerEmail"
+      class="terminal-input"
+      placeholder="correo@ejemplo.com"
+      autocomplete="off">
+    <button id="subscribeBtn" class="terminal-btn">
+      <i class="fas fa-paper-plane"></i>
+      SUSCRIBIRSE
+    </button>
+  </div>
+
+  <div class="log-console">
+    <div class="log-line">
+      <i class="fas fa-angle-right"></i>
+      [system] sistema listo para nuevos suscriptores
+    </div>
+
+    <div class="log-line">
+      <i class="fas fa-angle-right"></i>
+      [latest] análisis de vulnerabilidades y noticias de la semana
+    </div>
+  </div>
+
+  <!-- Estos datos deberían venir de la BD -->
+  <div class="stats-bar">
+    <span><i class="fas fa-users"></i> {{total_subscribers}} suscriptores</span>
+    <span><i class="fas fa-newspaper"></i> {{total_newsletters}} ediciones</span>
+    <span><i class="fas fa-calendar"></i> publicación semanal</span>
+  </div>
+
+</div>
+
+<!-- BENEFICIOS -->
+<div class="features">
+
+  <div class="feature-item">
+    <i class="fas fa-bug"></i>
+    <h3>Vulnerabilidades</h3>
+    <p>Análisis de CVEs relevantes y su impacto.</p>
+  </div>
+
+  <div class="feature-item">
+    <i class="fas fa-shield-alt"></i>
+    <h3>Defensa</h3>
+    <p>Buenas prácticas, mitigaciones y hardening.</p>
+  </div>
+
+  <div class="feature-item">
+    <i class="fas fa-terminal"></i>
+    <h3>Herramientas</h3>
+    <p>Software y utilidades para profesionales de seguridad.</p>
+  </div>
+
+  <div class="feature-item">
+    <i class="fas fa-chart-line"></i>
+    <h3>Tendencias</h3>
+    <p>Noticias y análisis del ecosistema tecnológico.</p>
+  </div>
+
+</div>
+
+<!-- ÚLTIMA NEWSLETTER -->
+<div class="sample-issue">
+
+  <div class="issue-header">
+    <i class="fas fa-newspaper"></i>
+    <strong>Última edición</strong>
+  </div>
+
+  <!-- Datos obtenidos desde la BD -->
+  <h3>{{newsletter_title}}</h3>
+
+  <p>{{newsletter_summary}}</p>
+
+  <div class="issue-meta">
+    Publicada: {{publish_date}}
+  </div>
+
+</div>
+
+<!-- TESTIMONIOS -->
+<div class="testi">
+
+  <div class="testi-card">
+    <i class="fas fa-quote-left"></i>
+    Información clara y actualizada cada semana.
+  </div>
+
+  <div class="testi-card">
+    <i class="fas fa-quote-left"></i>
+    Una excelente fuente para mantenerse informado sobre ciberseguridad.
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+  <span><i class="fas fa-lock"></i> Privacidad garantizada</span>
+  <span><i class="fas fa-envelope"></i> Cancelación en cualquier momento</span>
+  <span><i class="fas fa-shield-alt"></i> Contenido educativo y profesional</span>
+</div>
+```
+
+  </div>
+
+</div>
+
+
+<script>
+  // CORE: interactive subscription simulation with hacker terminal log style
+  const subscribeButton = document.getElementById('subscribeBtn');
+  const emailInput = document.getElementById('hackerEmail');
+  const liveLogDiv = document.getElementById('liveLog');
+
+  // function to add log message (like terminal output)
+  function addLog(message, isError = false) {
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-line';
+    const icon = isError ? '<i class="fas fa-exclamation-triangle"></i>' : '<i class="fas fa-angle-double-right"></i>';
+    logEntry.innerHTML = `${icon} ${message}`;
+    liveLogDiv.appendChild(logEntry);
+    // auto-scroll to newest log
+    liveLogDiv.scrollTop = liveLogDiv.scrollHeight;
+    // limit logs to 30 entries for readability
+    while (liveLogDiv.children.length > 30) {
+      liveLogDiv.removeChild(liveLogDiv.firstChild);
+    }
+  }
+
+  // simple email validation (hacker style plus RFC-like)
+  function isValidEmail(email) {
+    const re = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
+    return re.test(email);
+  }
+
+  // Random hacker-style timestamp
+  function getTimeStamp() {
+    const now = new Date();
+    return `[${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}]`;
+  }
+
+  // generate random confirmation ID (mock)
+  function generateSubID() {
+    return '0x' + Math.floor(Math.random() * 16777215).toString(16).toUpperCase();
+  }
+
+  // handle subscription
+  function handleSubscribe() {
+    const email = emailInput.value.trim();
+    if (!email) {
+      addLog(`${getTimeStamp()} [ERROR] missing email argument. usage: subscribe --email <valid_address>`, true);
+      // add a little shake effect on input
+      emailInput.style.borderColor = '#ff6b6b';
+      setTimeout(() => emailInput.style.borderColor = '#3c7457', 800);
+      return;
+    }
+    if (!isValidEmail(email)) {
+      addLog(`${getTimeStamp()} [FAIL] invalid email format → "${email}" looks suspicious. drop a real address.`, true);
+      emailInput.style.borderColor = '#ff6b6b';
+      setTimeout(() => emailInput.style.borderColor = '#3c7457', 800);
+      return;
+    }
+
+    // if valid, simulate signup
+    const subscriptionId = generateSubID();
+    const fakeToken = Math.random().toString(36).substring(2, 10);
+    addLog(`${getTimeStamp()} [>] processing subscription for ${email} ...`);
+    setTimeout(() => {
+      addLog(`${getTimeStamp()} [✔] payload delivered. welcome to the underground, ${email.split('@')[0]}`);
+      addLog(`${getTimeStamp()} [i] subscription ID: ${subscriptionId} | confirmation hash: ${fakeToken}`);
+      addLog(`${getTimeStamp()} [✓] weekly drops will arrive at ${email} (check spam folder, hacker).`);
+      // add extra style effect
+      emailInput.value = '';
+      // also update fake counter maybe in the stats area? not needed but dynamic extra log
+      addLog(`${getTimeStamp()} [!] +1 active shell. total subscribers: ${Math.floor(2417 + Math.random() * 80)}`);
+    }, 500);
+  }
+
+  // binding click event
+  subscribeButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleSubscribe();
+  });
+
+  // Also allow 'Enter' key inside input field
+  emailInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubscribe();
+    }
+  });
+
+  // Additional hacker easter-egg: show cool ascii on console but not needed, but we add fake cmd log after load
+  window.addEventListener('DOMContentLoaded', () => {
+    addLog(`${getTimeStamp()} [daemon] Hacker newsletter v2.0 — terminal interface active.`);
+    addLog(`${getTimeStamp()} [tip] type your email & hit [ENTER] to join the elite list.`);
+    // animated blinking cursor effect on log? not necessary.
+    // Also set a random glitch effect for consistent hacker impression
+    const glitchEl = document.querySelector('.glitch');
+    if(glitchEl) {
+      setInterval(() => {
+        if(Math.random() > 0.95) {
+          glitchEl.style.textShadow = '0.08em 0 0 rgba(255,0,80,0.6), -0.08em -0.03em 0 #00ff9f';
+          setTimeout(() => {
+            glitchEl.style.textShadow = '0.05em 0 0 rgba(255, 0, 0, 0.4), -0.05em -0.025em 0 rgba(0, 255, 0, 0.3)';
+          }, 120);
+        }
+      }, 1800);
+    }
+  });
+</script>
+</body>
+</html>
