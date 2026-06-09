@@ -371,7 +371,7 @@ VALUES
     2,
     'Editor Principal',
     'editor@newsletter.com',
-    '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
+    '$2y$10$qVYyHYfoIBbtdFU8yUPs5.XWPzUz7Y.qZzkFJ9w5ZAjvE/Bu5DqJa'
 );
 
 INSERT INTO newsletters
