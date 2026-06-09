@@ -3,43 +3,106 @@
 session_start();
 
 require_once '../includes/conexion.php';
+require_once '../includes/sql.php';
 
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+$_SESSION['intentos'] ??= 0;
 
-    $email = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
+if (
+    isset($_SESSION['bloqueado_hasta']) &&
+    time() < $_SESSION['bloqueado_hasta']
+) {
 
-    $stmt = $pdo->prepare("
-        SELECT
-            u.*,
-            r.nombre AS rol
-        FROM usuarios u
-        JOIN roles r
-            ON r.id = u.rol_id
-        WHERE u.email = ?
-        LIMIT 1
-    ");
+    $segundos =
+        $_SESSION['bloqueado_hasta']
+        - time();
 
-    $stmt->execute([$email]);
+    $error =
+        "Cuenta bloqueada. Espera {$segundos} segundos.";
+}
 
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+if (
+    empty($error) &&
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+) {
+
+    $email = trim(
+        $_POST['email'] ?? ''
+    );
+
+    $password =
+        $_POST['password'] ?? '';
 
     if (
-        $usuario &&
-        password_verify($password, $usuario['password_hash'])
+        empty($email) ||
+        empty($password)
     ) {
 
-        $_SESSION['usuario_id'] = $usuario['id'];
-        $_SESSION['usuario_nombre'] = $usuario['nombre'];
-        $_SESSION['usuario_rol'] = $usuario['rol'];
-
-        header('Location: dashboard.php');
-        exit;
+        $error =
+            'Todos los campos son obligatorios.';
     }
 
-    $error = 'Credenciales incorrectas';
+    elseif (!emailValido($email)) {
+
+        $error =
+            'Correo electrónico inválido.';
+    }
+
+    else {
+
+        $usuario = autenticarUsuario(
+            $pdo,
+            $email,
+            $password
+        );
+
+        if ($usuario) {
+
+            $_SESSION['intentos'] = 0;
+
+            unset(
+                $_SESSION['bloqueado_hasta']
+            );
+
+            $_SESSION['usuario_id'] =
+                $usuario['id'];
+
+            $_SESSION['usuario_nombre'] =
+                $usuario['nombre'];
+
+            $_SESSION['usuario_rol'] =
+                $usuario['rol'];
+
+            header(
+                'Location: dashboard.php'
+            );
+
+            exit;
+        }
+
+        $_SESSION['intentos']++;
+
+        if (
+            $_SESSION['intentos'] >= 3
+        ) {
+
+            $_SESSION['bloqueado_hasta'] =
+                time() + 300;
+
+            $error =
+                'Demasiados intentos fallidos. Cuenta bloqueada durante 5 minutos.';
+        }
+
+        else {
+
+            $restantes =
+                3 - $_SESSION['intentos'];
+
+            $error =
+                "Credenciales incorrectas. Intentos restantes: {$restantes}";
+        }
+    }
 }
 
 ?>
@@ -53,7 +116,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <title>Login</title>
 
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link
+        rel="stylesheet"
+        href="../assets/css/style.css">
 
 </head>
 
@@ -68,9 +133,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($error): ?>
 
                 <div class="log-console">
+
                     <div class="log-line">
+
                         <?= htmlspecialchars($error) ?>
+
                     </div>
+
                 </div>
 
             <?php endif; ?>
@@ -103,8 +172,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <br>
 
-                <button class="terminal-btn" type="submit">
+                <button
+                    class="terminal-btn"
+                    type="submit">
+
                     Iniciar sesión
+
                 </button>
 
             </form>

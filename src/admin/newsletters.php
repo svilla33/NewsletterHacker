@@ -32,7 +32,12 @@ if (isset($_GET['edit'])) {
 }
 
 // -------------------------------------------------------------------------- | GUARDAR
+// -------------------------------------------------------------------------- | GUARDAR
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Si no se marcó ninguna etiqueta, enviamos un string vacío ''
+    // Si se marcaron, las unimos con comas: "PHP,Linux,Docker"
+    $etiquetas_enviadas = isset($_POST['etiquetas']) ? implode(',', $_POST['etiquetas']) : '';
+
     if (!empty($_POST['id'])) {
         actualizarNewsletter(
             $pdo,
@@ -47,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         guardarEtiquetasNewsletter(
             $pdo,
             (int)$_POST['id'],
-            $_POST['etiquetas']
+            $etiquetas_enviadas // Ahora es un string perfectamente compatible
         );
     } else {
         $newsletterId = crearNewsletter(
@@ -62,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         guardarEtiquetasNewsletter(
             $pdo,
             $newsletterId,
-            $_POST['etiquetas']
+            $etiquetas_enviadas // Ahora es un string perfectamente compatible
         );
     }
     header('Location: newsletters.php');
@@ -84,6 +89,7 @@ $newsletters = obtenerNewsletters($pdo);
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
+
 <body>
     <div class="terminal-window">
         <div class="term-bar">
@@ -158,16 +164,13 @@ $newsletters = obtenerNewsletters($pdo);
                             <label class="terminal-checkbox-label">
                                 <input type="checkbox"
                                        name="etiquetas[]"
-                                       value="<?= $tag['nombre'] ?>"
+                                       value="<?= htmlspecialchars($tag['nombre']) ?>"
                                        class="terminal-checkbox"
                                        <?= in_array($tag['nombre'], $etiquetasSeleccionadas) ? 'checked' : '' ?>>
                                 <?= htmlspecialchars($tag['nombre']) ?>
                             </label>
                         <?php endforeach; ?>
                     </div>
-
-                    <input type="hidden" name="etiquetas" id="etiquetasInput"
-                           value="<?= htmlspecialchars(isset($newsletter['etiquetas']) ? implode(',', $newsletter['etiquetas']) : '') ?>">
 
                     <p>Estado</p>
                     <select name="estado" class="terminal-select">
